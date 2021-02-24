@@ -31,33 +31,44 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "spi.h"
+//------------------------------------------------------------------------------
+//                       Declaracion de variables  
+//------------------------------------------------------------------------------
 
 uint8_t data_ADC = 0;
 uint8_t prueba = 0;
 
+//------------------------------------------------------------------------------
+//                         Declaracion de las funciones
+//------------------------------------------------------------------------------
 void setup(void);
 void config_adc(void);
 void read_ADC(void);
 
-void __interrupt() isr(void) {
+//------------------------------------------------------------------------------
+//                          Interrupcion
+//------------------------------------------------------------------------------
+void __interrupt() isr(void) { 
 
-    if (PIR1bits.ADIF) {
+    if (PIR1bits.ADIF) { //guarda datos ADC
         PIR1bits.ADIF = 0;
         data_ADC = ADRESH;
     }
 
-    if (SSPIF == 1) {
+    if (SSPIF == 1) { //recibe datos SPI
         prueba = SSPBUF;
         SSPIF = 0;
     }
 
 }
-
-void setup(void) {
+//------------------------------------------------------------------------------
+//                              FUNCIONES
+//------------------------------------------------------------------------------
+void setup(void) { //habilitamos puertos analogicos
     ANSEL = 0x01;
     ANSELH = 0x00;
 
-    TRISA = 0x21;
+    TRISA = 0x21; // entradas para S y el potenciometro
     TRISB = 0x00;
     PORTA = 0x00;
     PORTB = 0x00;
@@ -68,7 +79,7 @@ void setup(void) {
 
     config_adc();
 
-    spiInit(SPI_SLAVE_SS_EN, SPI_DATA_SAMPLE_MIDDLE, SPI_CLOCK_IDLE_LOW, SPI_IDLE_2_ACTIVE);
+    spiInit(SPI_SLAVE_SS_EN, SPI_DATA_SAMPLE_MIDDLE, SPI_CLOCK_IDLE_LOW, SPI_IDLE_2_ACTIVE); // configuramos el SPI en slave
 
     INTCONbits.GIE = 1;
     INTCONbits.PEIE = 1;
@@ -80,13 +91,16 @@ void setup(void) {
     return;
 }
 
+//------------------------------------------------------------------------------
+//                                     MAIN
+//------------------------------------------------------------------------------
 void main(void) {
     setup();
 
     while (1) {
-        read_ADC();
+        read_ADC(); // lee el ADC
         SSPBUF = data_ADC;
-        PORTB = data_ADC;
+        PORTB = data_ADC; // muestra en el puerto B
     }
 }
 
@@ -98,7 +112,7 @@ void config_adc(void) {
     return;
 }
 
-void read_ADC(void) {
+void read_ADC(void) { //lectura del ADC
     if (ADCON0bits.GO_DONE == 0) {
         asm("NOP");
         asm("NOP");
@@ -108,7 +122,7 @@ void read_ADC(void) {
         asm("NOP");
         asm("NOP");
         asm("NOP");
-        ADCON0bits.GO_DONE = 1;
+        ADCON0bits.GO_DONE = 1; // termina y enciende bandera
     }
 }
 

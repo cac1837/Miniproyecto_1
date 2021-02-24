@@ -31,32 +31,47 @@
 #include "spi.h"
 #include <stdint.h>
 
+//------------------------------------------------------------------------------
+//                       Declaracion de variables  
+//------------------------------------------------------------------------------
+
 uint8_t prueba = 0;
 
+//------------------------------------------------------------------------------
+//                         Declaracion de las funciones
+//------------------------------------------------------------------------------
 void setup(void);
 
-void __interrupt() isr(void) {
+//------------------------------------------------------------------------------
+//                          Interrupcion
+//------------------------------------------------------------------------------
+void __interrupt() isr(void) { // recibe los datos de SPI
     if (SSPIF == 1) {
         prueba = SSPBUF;
         SSPIF = 0;
     }
 }
 
+//------------------------------------------------------------------------------
+//                                     MAIN
+//------------------------------------------------------------------------------
 void main(void) {
     setup();
     while (1) {
-        SSPBUF = PORTB;
-        if (PORTEbits.RE0 == 1) {
+        SSPBUF = PORTB; // envia datos a travez del SPI
+        if (PORTEbits.RE0 == 1) { // si presiona el boton 1 incrementa el puertoB
             PORTB++;
             __delay_ms(275);
-        } else if (PORTEbits.RE1 == 1) {
+        } else if (PORTEbits.RE1 == 1) {//si presiona el boton 2 decrementa el puertoB
             PORTB--;
             __delay_ms(275);
         }
     }
 }
-
-void setup(void) {
+//------------------------------------------------------------------------------
+//                              FUNCIONES
+//------------------------------------------------------------------------------
+void setup(void) { // configuraron los puertos digitales
     ANSEL = 0x00;
     ANSELH = 0x00;
 

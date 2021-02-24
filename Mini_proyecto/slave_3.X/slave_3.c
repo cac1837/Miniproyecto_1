@@ -35,31 +35,39 @@
 #include <stdio.h>
 #include "spi.h"
 
+//------------------------------------------------------------------------------
+//                       Declaracion de variables  
+//------------------------------------------------------------------------------
 
 uint8_t prueba = 0;
 uint8_t temp = 0;
 
-
+//------------------------------------------------------------------------------
+//                         Declaracion de las funciones
+//------------------------------------------------------------------------------
 void setup(void);
 void config_ADC(void);
 void read_ADC(void);
 void semaforo(void);
 
+//------------------------------------------------------------------------------
+//                          Interrupcion
+//------------------------------------------------------------------------------
 void __interrupt() isr(void) {
 
     if (PIR1bits.ADIF) {
         PIR1bits.ADIF = 0;
-        temp = ADRESL;
-        temp = temp >> 1;
+        temp = ADRESL; //guarda el ADC
+        temp = temp >> 1; // se mueve un bit a la derecha 
     }
     
-    if (SSPIF == 1) {
+    if (SSPIF == 1) { // interrupcion del SPI
         prueba = SSPBUF;
         SSPIF = 0;
     }
 }
 
-void setup(void) {
+void setup(void) { // configuran puerto analogicos
     ANSEL = 0x01;
     ANSELH = 0x00;
 
@@ -85,30 +93,35 @@ void setup(void) {
     return;
 }
 
+//------------------------------------------------------------------------------
+//                                     MAIN
+//------------------------------------------------------------------------------
 void main(void) {
     setup();
     
     while (1) {
-        read_ADC();
+        read_ADC();// lee el ADC
         SSPBUF = temp;
-        semaforo();
+        semaforo();// es la funcion del semaforo
         PORTB = temp;
         
     }
 }
-
+//------------------------------------------------------------------------------
+//                              FUNCIONES
+//------------------------------------------------------------------------------
 void config_ADC(void) {
-    ADCON0 = 0b01000001; //inicialmente se configuro el canal 0
+    ADCON0 = 0b01000001; // se configuro el canal 0
     ADCON1 = 0b10001000;
     //Datos justificados a la izquierda
     ADCON1bits.ADFM = 1;
     //Valores VCC y GND de referencia
     ADCON1bits.VCFG0 = 0;
-    ADCON1bits.VCFG1 = 0; //Recordatorio esperar 10us antes de iniciar conversions
+    ADCON1bits.VCFG1 = 0; 
     return;
 }
 
-void read_ADC(void) {
+void read_ADC(void) {// lee el ADC
     if (ADCON0bits.GO_DONE == 0) {
         asm("NOP");
         asm("NOP");
@@ -118,24 +131,24 @@ void read_ADC(void) {
         asm("NOP");
         asm("NOP");
         asm("NOP");
-        ADCON0bits.GO_DONE = 1; // iniciar cconversion
+        ADCON0bits.GO_DONE = 1; // comienza la conversion
     }
 }
 
-void semaforo(void){
-    if (temp < 25)
+void semaforo(void){ //el semaforo funciona segun la temperatura 
+    if (temp < 25)// si es menor a 25 enciende led verde 
     {
         PORTEbits.RE2 = 1;
         PORTEbits.RE1 = 0;
         PORTEbits.RE0 = 0;
     }
-    else if ((temp > 25) && (temp < 36))
+    else if ((temp > 25) && (temp < 36)) // si esta entre 25 y 36 enciende led amarillo
     {
         PORTEbits.RE2 = 0;
         PORTEbits.RE1 = 1;
         PORTEbits.RE0 = 0;
     }
-    else if (temp > 36)
+    else if (temp > 36)// si es mayor a 36 enciende led rojo
     {
         PORTEbits.RE2 = 0;
         PORTEbits.RE1 = 0;

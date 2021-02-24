@@ -6,7 +6,7 @@
  */
 
 
-#include <xc.h>
+#include <xc.h> // Llamamos a las librerias
 #include <stdint.h>
 #include <stdio.h>
 #include <pic16f887.h>
@@ -16,18 +16,18 @@
 //------------------------------------------------------------------------------
 //                       Declaracion de variables  
 //------------------------------------------------------------------------------
-
+//variables para las interrupciones
 uint8_t prueba_1 = 0;
 uint8_t prueba_2 = 0;
 uint8_t prueba_3 = 0;
 uint8_t slave_0 = 0;
-uint8_t slave1_SPI = 0;
+uint8_t slave1_SPI = 0; //recibiran los datos de SPI
 uint8_t slave2_SPI = 0;
 uint8_t slave3_SPI = 0;
 char slave_1[6];
 char slave_2[6];
 char slave_3[6];
-char str[20];
+char str[20]; //guarda caracteres de pantalla
 
 //------------------------------------------------------------------------------
 //                         Declaracion de las funciones
@@ -40,7 +40,7 @@ void init_UART(void);
 //                              FUNCIONES
 //------------------------------------------------------------------------------
 
-void Text_Uart(char *text)
+void Text_Uart(char *text) // Es para textos donde se envia el caracter al uart
 {
   int i;
   for(i=0;text[i]!='\0';i++){
@@ -59,7 +59,7 @@ void init_UART(void) {
     TXEN = 1;
 }
 
-void setup(void) {
+void setup(void) { // Se declaran puerto como digitales
     ANSEL = 0x00;
     ANSELH = 0x00;
 
@@ -67,9 +67,9 @@ void setup(void) {
     TRISB = 0x00;
     TRISCbits.TRISC3 = 0;
     TRISCbits.TRISC4 = 1;
-    TRISCbits.TRISC5 = 0;
+    TRISCbits.TRISC5 = 0; //bits del SPI en master
     TRISD = 0x00;
-    TRISE = 0x00;
+    TRISE = 0x00;           // Entradas y salidas
 
     PORTA = 0x00;
     PORTB = 0x00;
@@ -81,7 +81,7 @@ void setup(void) {
 
     init_UART();
 
-    spiInit(SPI_MASTER_OSC_DIV4, SPI_DATA_SAMPLE_MIDDLE, SPI_CLOCK_IDLE_LOW, SPI_IDLE_2_ACTIVE);
+    spiInit(SPI_MASTER_OSC_DIV4, SPI_DATA_SAMPLE_MIDDLE, SPI_CLOCK_IDLE_LOW, SPI_IDLE_2_ACTIVE); //se configura SPI en el master
     PIE1bits.SSPIE = 1;
     PIR1bits.SSPIF = 0;
     return;
@@ -89,7 +89,7 @@ void setup(void) {
 //------------------------------------------------------------------------------
 //                          Interrupcion
 //------------------------------------------------------------------------------
-void __interrupt() isr(void) {
+void __interrupt() isr(void) { // activamos la bandera y acumulamos el valor SPI
 
     if (PIR1bits.SSPIF == 1) {
         prueba_1 = SSPBUF;
@@ -103,15 +103,15 @@ void main(void) {
     setup();
 
     while (1) {
-        lcd_clear();
+        lcd_clear(); //limpiamos la pantalla
 
-        if (slave_0 == 2) {
+        if (slave_0 == 2) { // habilitamos los slaves 
             PORTAbits.RA0 = 0;
             PORTAbits.RA1 = 1;
             PORTAbits.RA2 = 1;
-            SSPBUF = 0xFF;
+            SSPBUF = 0xFF; // enviamos los datos para iniciar el clock
             __delay_ms(10);
-            slave1_SPI = SSPBUF;
+            slave1_SPI = SSPBUF; // datos del buffer
             PORTAbits.RA0 = 1;
             PORTAbits.RA1 = 1;
             PORTAbits.RA2 = 1;
@@ -128,7 +128,7 @@ void main(void) {
             PORTAbits.RA0 = 1;
             PORTAbits.RA1 = 1;
             PORTAbits.RA2 = 1;
-            slave_0++;
+            slave_0++; //sumamos al contador 
         }
 
         if (slave_0 == 0) {
@@ -141,10 +141,10 @@ void main(void) {
             PORTAbits.RA0 = 1;
             PORTAbits.RA1 = 1;
             PORTAbits.RA2 = 1;
-            slave_0++;
+            slave_0++; // sumamos al contador
         }
 
-        lcd_write_string("POT  CONT  TEMP");
+        lcd_write_string("POT  CONT  TEMP"); //enviamos el texto a mostrar en la lcd
         lcd_move_cursor(1, 0);
         sprintf(slave_1, "%d", slave1_SPI);
         lcd_write_string(slave_1);
@@ -155,7 +155,7 @@ void main(void) {
         sprintf(slave_3, "%d", slave3_SPI);
         lcd_write_string(slave_3);
   
-        Text_Uart("POT  CONT  TEMP");
+        Text_Uart("POT  CONT  TEMP"); //escribimos la descripcion de las variables 
         TXREG = (0x0d);
 
         TXREG = (slave_1[0]);
